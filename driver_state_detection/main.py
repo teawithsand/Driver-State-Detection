@@ -9,6 +9,15 @@ from Utils import get_face_area
 from Eye_Dector_Module import EyeDetector as EyeDet
 from Pose_Estimation_Module import HeadPoseEstimator as HeadPoseEst
 from Attention_Scorer_Module import AttentionScorer as AttScorer
+import os
+import json
+
+def write_magic_file(name, value):
+    prefix = os.environ['MAGIC_DIR_NAME']
+    path =f"{prefix}/{name}"
+
+    with open(path, "wt") as f:
+        f.write(json.dumps(value))
 
 # camera matrix obtained from the camera calibration script, using a 9x6 chessboard
 camera_matrix = np.array(
@@ -160,6 +169,8 @@ def main():
         # find the faces using the face mesh model
         lms = detector.process(gray).multi_face_landmarks
 
+        write_magic_file("has_head.json", True if lms else False)
+
         if lms:  # process the frame only if at least a face is found
             # getting face landmarks and then take only the bounding box of the biggest face
             landmarks = _get_landmarks(lms)
@@ -220,10 +231,14 @@ def main():
             
 
             # if the driver is tired, show and alert on screen
+            write_magic_file("tired.json", tired)
+            write_magic_file("asleep.json", asleep)
+            write_magic_file("looking_away.json", looking_away)
+            write_magic_file("distracted.json", distracted)
+
             if tired:
                 cv2.putText(frame, "TIRED!", (10, 280),
                             cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 1, cv2.LINE_AA)
-
             # if the state of attention of the driver is not normal, show an alert on screen
             if asleep:
                 cv2.putText(frame, "ASLEEP!", (10, 300),
